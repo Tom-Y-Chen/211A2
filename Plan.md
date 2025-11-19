@@ -29,3 +29,11 @@ RoomieSplit/
 │   └── helpers.py           # 通用工具函数
 ├── assets/                  # 界面资源（图标、样式等）
 └── tests/                   # 测试文件
+
+
+
+Datasets links:
+
+https://www.kaggle.com/datasets/ramyapintchy/personal-finance-data
+https://www.kaggle.com/datasets/sanjay3454chauhan/personal-expense-data
+https://www.kaggle.com/datasets/tharunprabu/my-expenses-data
