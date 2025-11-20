@@ -1,0 +1,41 @@
+Your initial suggested plan for organizing the application is pretty good,
+but I tweaked it a little to follow the MVC architecture pattern: 
+
+RoomieSplit/
+├── main.py                    # Starts the app, initializes controller
+│
+├── models/                    # MODEL = data, persistence, business rules
+│   ├── __init__.py
+│   ├── roommate.py            # data class
+│   ├── expense.py             # data class
+│   ├── settlement.py          # calculations
+│   ├── calculator.py          # moved from logic/
+│   ├── report_generator.py    # moved from logic/
+│   │
+│   └── database/              # database access = part of Model layer
+│       ├── __init__.py
+│       ├── db_connection.py
+│       ├── roommate_db.py
+│       └── expense_db.py
+│
+├── views/                     # VIEW = Tkinter UI only
+│   ├── __init__.py
+│   ├── dashboard_view.py
+│   ├── roommate_view.py
+│   ├── expense_view.py
+│   └── report_view.py
+│
+├── controllers/               # CONTROLLER = app logic, event handling
+│   ├── __init__.py
+│   ├── app_controller.py      # master controller
+│   ├── roommate_controller.py
+│   ├── expense_controller.py
+│   └── report_controller.py
+│
+├── utils/
+│   ├── __init__.py
+│   ├── validators.py
+│   └── helpers.py
+│
+├── assets/
+└── tests/
