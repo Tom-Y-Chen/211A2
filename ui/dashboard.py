@@ -2,33 +2,27 @@ import tkinter as tk
 from tkinter import ttk
 
 class DashboardFrame(ttk.Frame):
-    def __init__(self, parent, controller): # controller 是 RoomieSplitApp 的实例
+    def __init__(self, parent, controller):
         super().__init__(parent)
-        self.controller = controller
+        self.controller = controller # controller 是 RoomieSplitApp 的实例
 
         # --- 仪表盘内容 ---
-        # 标题
         title_label = ttk.Label(self, text="RoomieSplit Dashboard", font=('Arial', 16, 'bold'))
         title_label.pack(pady=(10, 20))
 
-        # 描述
         desc_label = ttk.Label(self, text="Manage shared expenses with your roommates or track your personal budget.", wraplength=400)
         desc_label.pack(pady=(0, 20))
 
-        # 操作按钮
         button_frame = ttk.Frame(self)
         button_frame.pack(pady=10)
 
-        # 这些按钮将用于导航到其他功能
-        # 按钮的 command 将在后续步骤中连接到 controller 的方法
-        ttk.Button(button_frame, text="Manage Roommates", command=self.on_manage_roommates_click).pack(pady=5)
-        ttk.Button(button_frame, text="Add New Expense", command=self.on_add_expense_click).pack(pady=5)
-        ttk.Button(button_frame, text="View Settlement Report", command=self.on_view_report_click).pack(pady=5)
-        ttk.Button(button_frame, text="View Personal Budget", command=self.on_view_budget_click).pack(pady=5)
+        # 将按钮的 command 连接到 controller 的方法
+        ttk.Button(button_frame, text="Manage Roommates", command=self.controller.show_manage_roommates).pack(pady=5)
+        ttk.Button(button_frame, text="Add New Expense", command=self.controller.show_add_expense).pack(pady=5)
+        ttk.Button(button_frame, text="View Settlement Report", command=self.controller.show_report).pack(pady=5)
+        # 注意：个人预算报告现在在 ReportFrame 中通过单选按钮切换
+        # ttk.Button(button_frame, text="View Personal Budget", command=self.on_view_budget_click).pack(pady=5)
 
-        # 概览信息区域 (可以后续添加)
-        # overview_frame = ttk.LabelFrame(self, text="Overview")
-        # overview_frame.pack(fill=tk.X, padx=20, pady=20)
 
     def on_manage_roommates_click(self):
         """处理“管理室友”按钮点击事件"""
