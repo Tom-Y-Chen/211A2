@@ -37,3 +37,8 @@ Datasets links:
 https://www.kaggle.com/datasets/ramyapintchy/personal-finance-data
 https://www.kaggle.com/datasets/sanjay3454chauhan/personal-expense-data
 https://www.kaggle.com/datasets/tharunprabu/my-expenses-data
+
+
+
+Tom: Utils, UI, logic. 
+backend: Models, database
