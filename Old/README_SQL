@@ -1,0 +1,246 @@
+**BACKEND API — Functions You Can Use in the UI**
+
+This project uses an SQLite database stored at:
+
+```
+assets/data/roomiesplit.db
+```
+
+All database access happens through the following modules:
+
+```
+models/database/db_connection.py
+models/database/roommate_db.py
+models/database/expense_db.py
+```
+
+You **should NEVER write SQL in the UI** — use the functions below.
+
+---
+
+# 🟦 1. Database Initialization
+
+### `initialize_database()`
+
+Creates tables (`roommates`, `expenses`) if they don’t exist.
+**Call this ONCE when the app starts.**
+
+---
+
+# 🟩 2. Roommate API (`roommate_db.py`)
+
+### ✔ **add_roommate(name, email="")**
+
+Add a new roommate.
+
+```python
+add_roommate("Adam", "adam@mail.com")
+```
+
+---
+
+### ✔ **get_all_roommates() → list**
+
+Returns a list of tuples:
+
+```
+(id, name, email)
+```
+
+Example:
+
+```python
+roommates = get_all_roommates()
+```
+
+---
+
+### ✔ **assign_random_payer(expense_ids)**
+
+Randomly assigns a roommate to each expense ID.
+
+```python
+assign_random_payer([3, 4, 8])
+```
+
+---
+
+# 🟥 3. Expense API (`expense_db.py`)
+
+### ✔ **add_expense(date, account, category, amount, note="")**
+
+Add a new expense record.
+
+```python
+add_expense("2024-03-11", "Credit Card", "Food", 22.50, "Pizza")
+```
+
+---
+
+### ✔ **get_all_expenses() → list**
+
+Returns all expenses:
+
+```
+(id, date, account, category, amount, note, payer_id)
+```
+
+---
+
+### ✔ **get_expense_by_category(category)**
+
+Retrieve expenses filtered by category:
+
+```python
+get_expense_by_category("Food")
+```
+
+---
+
+### ✔ **update_expense(expense_id, ...)**
+
+Update only the fields provided:
+
+```python
+update_expense(
+    expense_id=5,
+    category="Groceries",
+    note="Corrected category"
+)
+```
+
+---
+
+### ✔ **delete_expense(expense_id)**
+
+Delete the given expense.
+
+```python
+delete_expense(2)
+```
+
+---
+
+### ✔ **load_dataset(path="assets/data/dataset.csv")**
+
+Bulk load CSV → inserts into `expenses` table.
+
+```python
+load_dataset()
+```
+
+---
+
+# 🎮 UI → BACKEND CALLBACK TEMPLATE
+
+Here are the **exact callbacks to write**, calling the backend correctly.
+
+---
+
+# 🟦 ROOMMATE UI CALLBACKS
+
+### **Add Roommate**
+
+```python
+from models.database.roommate_db import add_roommate, get_all_roommates
+
+def on_add_roommate(self):
+    name = self.name_entry.get()
+    email = self.email_entry.get()
+
+    if not name:
+        self.show_error("Name cannot be empty")
+        return
+
+    add_roommate(name, email)
+    self.refresh_roommate_list()
+```
+
+---
+
+### **Refresh list**
+
+```python
+def refresh_roommate_list(self):
+    self.listbox.delete(0, "end")
+    for row in get_all_roommates():
+        rid, name, email = row
+        self.listbox.insert("end", f"{name} ({email})")
+```
+
+---
+
+# 🟥 EXPENSE UI CALLBACKS
+
+### **Add Expense**
+
+```python
+from models.database.expense_db import add_expense, get_all_expenses
+
+def on_add_expense(self):
+    date = self.date_entry.get()
+    account = self.account_entry.get()
+    category = self.category_entry.get()
+    amount = self.amount_entry.get()
+    note = self.note_entry.get()
+
+    try:
+        amount = float(amount)
+    except:
+        self.show_error("Amount must be a number")
+        return
+
+    add_expense(date, account, category, amount, note)
+    self.refresh_expense_list()
+```
+
+---
+
+### **Refresh Expense List**
+
+```python
+def refresh_expense_list(self):
+    self.expense_listbox.delete(0, "end")
+    for row in get_all_expenses():
+        eid, date, acc, cat, amt, note, payer = row
+        self.expense_listbox.insert("end", f"{date} | {cat} | ${amt}")
+```
+
+---
+
+### **Edit Expense**
+
+```python
+from models.database.expense_db import update_expense
+
+def on_edit_expense(self):
+    selected = self.get_selected_expense_id()
+    if selected is None:
+        return
+
+    update_expense(
+        expense_id=selected,
+        category=self.category_entry.get(),
+        amount=float(self.amount_entry.get())
+    )
+
+    self.refresh_expense_list()
+```
+
+---
+
+### **Delete Expense**
+
+```python
+from models.database.expense_db import delete_expense
+
+def on_delete_expense(self):
+    selected = self.get_selected_expense_id()
+    if selected is None:
+        return
+
+    delete_expense(selected)
+    self.refresh_expense_list()
+```
+
+---
