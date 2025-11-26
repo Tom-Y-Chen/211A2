@@ -3,7 +3,8 @@ import sqlite3
 from pathlib import Path
 
 # Database file path configuration
-DB_PATH = Path("assets/data/roomiesplit.db")
+# DB_PATH = Path("assets/data/roomiesplit.db")
+DB_PATH = Path(__file__).parent.parent.parent / "assets" / "data" / "roomiesplit.db"
 
 
 def get_connection() -> sqlite3.Connection:
