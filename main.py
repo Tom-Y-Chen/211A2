@@ -1,3 +1,11 @@
+import sys
+import os
+from pathlib import Path
+
+# Add project root to Python path - CRITICAL for portable apps
+project_root = Path(__file__).parent.absolute()
+sys.path.insert(0, str(project_root))
+
 import tkinter as tk
 from tkinter import ttk
 from views.dashboard import DashboardFrame
