@@ -1,6 +1,6 @@
 from models.database.db_connection import initialize_database
 from models.database.expense_db import get_all_expenses
-from models.database.roommate_db import add_roommate, assign_random_payer
+from models.database.roomate_db import add_roommate, assign_random_payer
 
 # Initialize database tables if not already
 initialize_database()
