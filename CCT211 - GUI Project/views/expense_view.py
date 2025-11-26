@@ -391,18 +391,224 @@ class ExpenseEntryFrame(ttk.Frame):
         except Exception as e:
             messagebox.showerror("Database Error", f"Failed to add expense: {str(e)}")
 
+    
     def edit_expense(self):
         """
-        Placeholder for expense editing functionality.
+        Edit the selected expense record.
         
-        Note: This feature is not yet implemented.
+        Opens a pre-populated edit dialog with the selected expense's data
+        and allows users to modify all expense fields.
         """
-        selected_item = self.history_tree.selection()
-        if not selected_item:
+        selected_items = self.history_tree.selection()
+        if not selected_items:
             messagebox.showwarning("Selection Error", "Please select an expense to edit.")
             return
-        messagebox.showinfo("Info", "Edit functionality for expense would be implemented here.")
+        
+        # Only allow editing one expense at a time for simplicity
+        if len(selected_items) > 1:
+            messagebox.showwarning("Selection Error", "Please select only one expense to edit.")
+            return
+            
+        selected_item = selected_items[0]
+        item_values = self.history_tree.item(selected_item)['values']
+        expense_id = item_values[0]
+        
+        try:
+            from models.database.expense_db import get_expense_by_id, get_expense_participants
+            
+            # Get the full expense data from database
+            expense_data = get_expense_by_id(expense_id)
+            if not expense_data:
+                messagebox.showerror("Error", f"Expense with ID {expense_id} not found.")
+                return
+            
+            # Get current participants for this expense
+            current_participants = get_expense_participants(expense_id)
+            current_participant_ids = [p[0] for p in current_participants]  # p[0] is roommate_id
+            
+            # Open edit dialog with current data
+            self.open_edit_dialog(expense_data, current_participant_ids, expense_id)
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load expense data: {str(e)}")
 
+    def open_edit_dialog(self, expense_data, current_participant_ids, expense_id):
+        """
+        Open a dialog for editing expense details.
+        
+        Args:
+            expense_data (tuple): The current expense data from database
+            current_participant_ids (list): List of current participant IDs
+            expense_id (int): The ID of the expense being edited
+        """
+        # Create edit dialog window
+        edit_window = tk.Toplevel(self)
+        edit_window.title(f"Edit Expense ID: {expense_id}")
+        edit_window.geometry("500x400")
+        edit_window.transient(self)
+        edit_window.grab_set()
+        
+        # Main container
+        main_frame = ttk.Frame(edit_window, padding=10)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Expense ID display (read-only)
+        ttk.Label(main_frame, text=f"Expense ID: {expense_id}", 
+                 font=('Arial', 10, 'bold')).pack(anchor=tk.W, pady=(0, 10))
+        
+        # --- Edit Form Fields ---
+        input_frame = ttk.LabelFrame(main_frame, text="Edit Expense Details", padding=10)
+        input_frame.pack(fill=tk.X, pady=5)
+        
+        # Amount Field
+        ttk.Label(input_frame, text="Amount ($):").grid(row=0, column=0, sticky=tk.W, padx=(0, 5), pady=5)
+        amount_var = tk.StringVar(value=expense_data[4])  # amount at index 4
+        amount_entry = ttk.Entry(input_frame, textvariable=amount_var, width=15)
+        amount_entry.grid(row=0, column=1, sticky=tk.W, pady=5)
+        
+        # Date Field
+        ttk.Label(input_frame, text="Date (YYYY-MM-DD):").grid(row=1, column=0, sticky=tk.W, padx=(0, 5), pady=5)
+        date_var = tk.StringVar(value=expense_data[1])  # date at index 1
+        date_entry = ttk.Entry(input_frame, textvariable=date_var, width=15)
+        date_entry.grid(row=1, column=1, sticky=tk.W, pady=5)
+        
+        # Category Selection
+        ttk.Label(input_frame, text="Category:").grid(row=2, column=0, sticky=tk.W, padx=(0, 5), pady=5)
+        category_var = tk.StringVar(value=expense_data[3])  # category at index 3
+        category_combo = ttk.Combobox(
+            input_frame, 
+            values=["Rent", "Utilities", "Groceries", "Dining Out", "Entertainment", "Other"], 
+            textvariable=category_var,
+            state="readonly", 
+            width=15
+        )
+        category_combo.grid(row=2, column=1, sticky=tk.W, pady=5)
+        
+        # Payer Selection
+        ttk.Label(input_frame, text="Paid By:").grid(row=3, column=0, sticky=tk.W, padx=(0, 5), pady=5)
+        payer_var = tk.StringVar()
+        
+        # Find current payer name
+        current_payer_id = expense_data[6]  # payer_id at index 6
+        current_payer_name = "Unknown"
+        for rm in self.roommates_list:
+            if rm['id'] == current_payer_id:
+                current_payer_name = rm['name']
+                break
+                
+        payer_var.set(current_payer_name)
+        payer_combo = ttk.Combobox(
+            input_frame, 
+            values=[rm['name'] for rm in self.roommates_list],
+            textvariable=payer_var,
+            state="readonly", 
+            width=15
+        )
+        payer_combo.grid(row=3, column=1, sticky=tk.W, pady=5)
+        
+        # Note Field
+        ttk.Label(input_frame, text="Note:").grid(row=4, column=0, sticky=tk.W, padx=(0, 5), pady=5)
+        note_var = tk.StringVar(value=expense_data[5] if expense_data[5] else "")  # note at index 5
+        note_entry = ttk.Entry(input_frame, textvariable=note_var, width=20)
+        note_entry.grid(row=4, column=1, sticky=tk.W, pady=5)
+        
+        # Account Field
+        ttk.Label(input_frame, text="Account:").grid(row=5, column=0, sticky=tk.W, padx=(0, 5), pady=5)
+        account_var = tk.StringVar(value=expense_data[2] if expense_data[2] else "")  # account at index 2
+        account_entry = ttk.Entry(input_frame, textvariable=account_var, width=20)
+        account_entry.grid(row=5, column=1, sticky=tk.W, pady=5)
+        
+        # --- Participants Section ---
+        participants_frame = ttk.LabelFrame(main_frame, text="Participants", padding=10)
+        participants_frame.pack(fill=tk.X, pady=10)
+        
+        # Store participant checkbox variables
+        participant_vars = {}
+        for rm in self.roommates_list:
+            var = tk.BooleanVar(value=(rm['id'] in current_participant_ids))
+            chk = ttk.Checkbutton(participants_frame, text=rm['name'], variable=var)
+            chk.pack(side=tk.LEFT, padx=5)
+            participant_vars[rm['id']] = var
+        
+        # --- Action Buttons ---
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=10)
+        
+        def save_changes():
+            """Validate and save the edited expense data."""
+            # Validate amount
+            try:
+                amount = float(amount_var.get())
+                if amount <= 0:
+                    raise ValueError("Amount must be positive")
+            except ValueError:
+                messagebox.showerror("Input Error", "Please enter a valid positive amount.")
+                return
+            
+            # Validate date
+            try:
+                datetime.strptime(date_var.get(), '%Y-%m-%d')
+            except ValueError:
+                messagebox.showerror("Input Error", "Date format should be YYYY-MM-DD.")
+                return
+            
+            # Get selected participant IDs
+            selected_participant_ids = [
+                rm_id for rm_id, var in participant_vars.items() 
+                if var.get()
+            ]
+            if not selected_participant_ids:
+                messagebox.showerror("Input Error", "At least one participant must be selected.")
+                return
+            
+            # Find payer ID
+            payer_id = None
+            for rm in self.roommates_list:
+                if rm['name'] == payer_var.get():
+                    payer_id = rm['id']
+                    break
+            
+            if payer_id is None:
+                messagebox.showerror("Input Error", "Selected payer is not in the roommate list.")
+                return
+            
+            # Ensure payer is included in participants
+            if payer_id not in selected_participant_ids:
+                messagebox.showerror("Input Error", "The payer must be included in the participants.")
+                return
+            
+            try:
+                from models.database.expense_db import update_expense, update_expense_participants
+                
+                # Update expense record
+                update_expense(
+                    expense_id=expense_id,
+                    date=date_var.get(),
+                    account=account_var.get(),
+                    category=category_var.get(),
+                    amount=amount,
+                    note=note_var.get(),
+                    payer_id=payer_id
+                )
+                
+                # Update participants
+                update_expense_participants(expense_id, selected_participant_ids)
+                
+                messagebox.showinfo("Success", "Expense updated successfully.")
+                edit_window.destroy()
+                self.refresh_history_list()  # Refresh the display
+                
+            except Exception as e:
+                messagebox.showerror("Database Error", f"Failed to update expense: {str(e)}")
+        
+        def cancel_edit():
+            """Close the edit dialog without saving changes."""
+            edit_window.destroy()
+        
+        # Action buttons
+        ttk.Button(button_frame, text="Save Changes", command=save_changes).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Cancel", command=cancel_edit).pack(side=tk.LEFT, padx=5)
+    
     def delete_expense(self):
         """
         Delete selected expenses from the database.
